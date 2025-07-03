@@ -30,12 +30,11 @@ public class BurgerMenu {
         return new LoginForm(driver);
     }
 
-    public HomePage LogOut(){
+
+    public void logOut(){
         wait.until(ExpectedConditions.visibilityOfElementLocated(burgerMenu)).click();
         wait.until(ExpectedConditions.visibilityOfElementLocated(logoutButton)).click();
-        return new HomePage(driver);
     }
-
 
 
 

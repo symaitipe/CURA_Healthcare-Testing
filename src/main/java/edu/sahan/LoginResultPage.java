@@ -15,7 +15,7 @@ public class LoginResultPage {
 
     public LoginResultPage (WebDriver driver){
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(2));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(4));
     }
 
     private static final By errorAlert = By.cssSelector("p[class='lead text-danger']");

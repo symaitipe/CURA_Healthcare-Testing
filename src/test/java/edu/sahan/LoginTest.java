@@ -9,8 +9,6 @@ public class LoginTest extends BaseTest{
 
     private final String VALID_USERNAME = "John Doe";
     private final String VALID_PASSWORD = "ThisIsNotAPassword";
-    private final String INVALID_USERNAME = "wrongUser";
-    private final String INVALID_PASSWORD = "wrongPass";
 
     LoginResultPage resultPage;
 
@@ -22,14 +20,15 @@ public class LoginTest extends BaseTest{
 
         assertTrue(resultPage.isLoginSuccessful(), "Login was not successful");
 
-        homePage.goToBurgerMenu().LogOut();
+        homePage.goToBurgerMenu().logOut();
     }
 
     @Test
     public void testInvalidUsername() {
         BurgerMenu burgerMenu = homePage.goToBurgerMenu();
         LoginForm loginForm = burgerMenu.goToLoginPage();
-         resultPage = loginForm.loginWithInvalidCredentials(INVALID_USERNAME, VALID_PASSWORD);
+        String INVALID_USERNAME = "wrongUser";
+        resultPage = loginForm.loginWithInvalidCredentials(INVALID_USERNAME, VALID_PASSWORD);
 
         assertFalse(resultPage.isLoginSuccessful(), "Login was successful");
 
@@ -39,6 +38,7 @@ public class LoginTest extends BaseTest{
     public void testInvalidPassword() {
         BurgerMenu burgerMenu = homePage.goToBurgerMenu();
         LoginForm loginForm = burgerMenu.goToLoginPage();
+        String INVALID_PASSWORD = "wrongPass";
         resultPage = loginForm.loginWithInvalidCredentials(VALID_USERNAME, INVALID_PASSWORD);
 
         assertFalse(resultPage.isLoginSuccessful(), "Login was successful");
