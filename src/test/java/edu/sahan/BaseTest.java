@@ -1,11 +1,15 @@
 package edu.sahan;
 
-
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.By;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class BaseTest {
@@ -14,22 +18,27 @@ public class BaseTest {
     protected HomePage homePage;
 
     @BeforeAll
-    public void goToAURAHealth(){
+    public void goToAURAHealth() {
+        // Set the path to ChromeDriver
+        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
 
-        System.setProperty("webdriver.chrome.driver","src/test/resources/chromedriver.exe");
-
-        // Disable password manager in Chrome
+        // Configure ChromeOptions
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--disable-save-password-bubble");
-        options.setExperimentalOption("prefs", new java.util.HashMap<String, Object>() {{
-            put("credentials_enable_service", false);
-            put("profile.password_manager_enabled", false);
-        }});
+        Map<String, Object> prefs = new HashMap<>();
+        prefs.put("credentials_enable_service", false);
+        prefs.put("profile.password_manager_enabled", false);
+        prefs.put("autofill.profile_enabled", false);
+        options.setExperimentalOption("prefs", prefs);
+        options.addArguments("--disable-notifications");
+        options.addArguments("--disable-infobars");
+        options.addArguments("--disable-extensions");
 
+        // Initialize ChromeDriver
         driver = new ChromeDriver(options);
 
+        // Navigate to the test site
         driver.get("https://katalon-demo-cura.herokuapp.com/");
-        driver.manage().window().fullscreen();
+        driver.manage().window().maximize();
 
         homePage = new HomePage(driver);
 
@@ -37,8 +46,9 @@ public class BaseTest {
 
 
     @AfterAll
-    public void quitDriver(){
-        driver.quit();
+    public void quitDriver() {
+        if (driver != null) {
+            driver.quit();
+        }
     }
-
 }

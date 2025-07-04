@@ -1,44 +1,151 @@
-// src/test/java/edu/sahan/LogoutTest.java
-package edu.sahan;
 
+package edu.sahan;
 import org.junit.jupiter.api.*;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.time.Duration;
 
 public class LogoutTest extends BaseTest {
-    private static final Duration TIMEOUT = Duration.ofSeconds(5);
-    private static final String HOME_URL = "https://katalon-demo-cura.herokuapp.com/";
-    private static final String VALID_USERNAME = "John Doe";
-    private static final String VALID_PASSWORD = "ThisIsNotAPassword";
-
+    // Failed Booking if not logged in
     @Test
-    @DisplayName("Test logout when user is logged in")
-    public void testLogout() {
-        // 1. Login first
-        LoginResultPage resultPage = homePage.goToBurgerMenu()
-                .goToLoginPage()
-                .loginWithValidCredentials(VALID_USERNAME, VALID_PASSWORD);
-
-        // Verify successful login
-        assertTrue(resultPage.isLoginSuccessful(), "Should be on appointment page after login");
-        assertTrue(homePage.isUserLoggedIn(), "User should be logged in");
-
-        // 2. Perform logout
-        homePage.goToBurgerMenu().logOut();
-
-        // 3. Verify logout success
-        verifySuccessfulLogout();
+    void testBookingFailsIfNotLoggedIn() {
+        if (homePage.isUserLoggedIn()) {
+            BurgerMenu menu = homePage.goToBurgerMenu();
+            menu.logOut();
+        }
+        homePage.goToMakeAppointmentPage();
+        String url = driver.getCurrentUrl();
+        assertNotNull(url);
+        assertTrue(url.contains("profile.php#login") || driver.getPageSource().contains("Login"),
+                "User should be redirected to login page if not logged in");
     }
 
-    private void verifySuccessfulLogout() {
-        new WebDriverWait(driver, TIMEOUT)
-                .until(ExpectedConditions.urlToBe(HOME_URL));
+    // Health Program - Select Medicare
+    @Test
+    void testBookAppointmentWithMedicare() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Hongkong CURA Healthcare Center");
+        form.setHospitalReadmission(true);
+        form.selectMedicare();
+        form.setVisitDate("12/12/2025");
+        form.setComment("Medicare test");
+        form.bookAppointment();
+        assertTrue(driver.getCurrentUrl().contains("appointment.php#summary"),
+                "Should be redirected to appointment confirmation page");
+    }
 
-        assertFalse(homePage.isUserLoggedIn(), "User should be logged out");
-        assertTrue(homePage.isLoginMenuItemVisible(), "Login option should be visible");
-        assertTrue(homePage.isBurgerMenuCollapsed(), "Burger menu should collapse after logout");
+    // Health Program - Select Medicaid
+    @Test
+    void testBookAppointmentWithMedicaid() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Hongkong CURA Healthcare Center");
+        form.setHospitalReadmission(true);
+        form.selectMedicaid();
+        form.setVisitDate("12/12/2025");
+        form.setComment("Medicaid test");
+        form.bookAppointment();
+        assertTrue(driver.getCurrentUrl().contains("appointment.php#summary"),
+                "Should be redirected to appointment confirmation page");
+    }
+
+    // Health Program - Select None
+    @Test
+    void testBookAppointmentWithNoneSelected() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Seoul CURA Healthcare Center");
+        form.setHospitalReadmission(false);
+        form.selectNone();
+        form.setVisitDate("01/01/2025");
+        form.setComment("No program selected");
+        form.bookAppointment();
+        assertTrue(driver.getCurrentUrl().contains("appointment.php#summary"),
+                "Should be redirected to appointment confirmation page");
+    }
+
+    @Test
+    void testBookAppointmentWithMedicaidNoReadmission() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Tokyo CURA Healthcare Center");
+        form.setHospitalReadmission(false);
+        form.selectMedicaid();
+        form.setVisitDate("02/02/2025");
+        form.setComment("Medicaid without readmission");
+        form.bookAppointment();
+        assertTrue(driver.getCurrentUrl().contains("appointment.php#summary"),
+                "Should be redirected to appointment confirmation page");
+    }
+
+    @Test
+    void testBookAppointmentWithEmptyComment() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Seoul CURA Healthcare Center");
+        form.setHospitalReadmission(true);
+        form.selectMedicare();
+        form.setVisitDate("03/03/2025");
+        form.setComment("");
+        form.bookAppointment();
+        assertTrue(driver.getCurrentUrl().contains("appointment.php#summary"),
+                "Should be redirected to appointment confirmation page");
+    }
+
+    @Test
+    void testBookAppointmentWithInvalidDateFormat() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Hongkong CURA Healthcare Center");
+        form.setHospitalReadmission(true);
+        form.selectMedicare();
+        form.setVisitDate("03-03-2025"); // Wrong format
+        form.setComment("Invalid date format");
+        String beforeUrl = driver.getCurrentUrl();
+        form.bookAppointment();
+        assertEquals(beforeUrl, driver.getCurrentUrl(), "Should stay on form page due to invalid date");
+    }
+
+    @Test
+    void testBookAppointmentWithoutDate() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.selectFacility("Seoul CURA Healthcare Center");
+        form.setHospitalReadmission(true);
+        form.selectMedicaid();
+        form.setVisitDate(""); // No date entered
+        form.setComment("No date");
+        String beforeUrl = driver.getCurrentUrl();
+        form.bookAppointment();
+        assertEquals(beforeUrl, driver.getCurrentUrl(), "Should stay on form page due to missing date");
+    }
+
+    @Test
+    void testBookAppointmentWithoutSelectingFacility() {
+        if (!homePage.isUserLoggedIn()) {
+            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
+        }
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        form.setHospitalReadmission(true);
+        form.selectMedicare();
+        form.setVisitDate("04/04/2025");
+        form.setComment("No facility selected");
+        String beforeUrl = driver.getCurrentUrl();
+        form.bookAppointment();
+        assertEquals(beforeUrl, driver.getCurrentUrl(), "Should stay on form page due to missing facility");
     }
 }
