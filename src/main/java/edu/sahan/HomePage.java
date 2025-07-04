@@ -20,7 +20,7 @@ public class HomePage {
 
     public HomePage(WebDriver driver) {
         this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        this.wait = new WebDriverWait(driver, Duration.ofSeconds(5));
     }
 
     public BurgerMenu goToBurgerMenu(){
@@ -30,10 +30,7 @@ public class HomePage {
     public boolean isUserLoggedIn() {
         // If logout menu item is visible, user is logged in
         try {
-            driver.findElement(burgerMenuButton).click();
-            boolean visible = wait.until(ExpectedConditions.visibilityOfElementLocated(logoutMenuItem)).isDisplayed();
-            driver.findElement(burgerMenuButton).click();
-            return visible;
+            return wait.until(ExpectedConditions.visibilityOfElementLocated(logoutMenuItem)).isDisplayed();
         } catch (Exception e) {
             return false;
         }
@@ -52,12 +49,16 @@ public class HomePage {
 
     public boolean isBurgerMenuCollapsed() {
         // Check if the burger menu is collapsed (not expanded)
-        // This can be improved based on actual DOM changes after collapse
         try {
             // If login/logout menu item is not visible, menu is collapsed
             return driver.findElement(loginMenuItem).isDisplayed() && !driver.findElement(logoutMenuItem).isDisplayed();
         } catch (Exception e) {
             return true;
         }
+    }
+
+    public AppointmentForm goToMakeAppointmentPage() {
+        wait.until(ExpectedConditions.elementToBeClickable(makeAppointmentButton)).click();
+        return new AppointmentForm(driver);
     }
 }
