@@ -2,12 +2,8 @@ package edu.sahan;
 
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
-import org.openqa.selenium.By;
-import java.time.Duration;
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.edge.EdgeOptions;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,11 +15,24 @@ public class BaseTest {
 
     @BeforeAll
     public void goToAURAHealth() {
-        // Set the path to ChromeDriver
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
+        // Set the path to EdgeDriver
+        System.setProperty("webdriver.edge.driver", "src/test/resources/msedgedriver.exe");
 
-        // Configure ChromeOptions
-        ChromeOptions options = new ChromeOptions();
+        // Configure EdgeOptions
+        EdgeOptions options = getEdgeOptions();
+
+        // Initialize EdgeDriver
+        driver = new EdgeDriver(options);
+
+        // Navigate to the test site
+        driver.get("https://katalon-demo-cura.herokuapp.com/");
+        driver.manage().window().maximize();
+
+        homePage = new HomePage(driver);
+    }
+
+    private static EdgeOptions getEdgeOptions() {
+        EdgeOptions options = new EdgeOptions();
         Map<String, Object> prefs = new HashMap<>();
         prefs.put("credentials_enable_service", false);
         prefs.put("profile.password_manager_enabled", false);
@@ -32,18 +41,8 @@ public class BaseTest {
         options.addArguments("--disable-notifications");
         options.addArguments("--disable-infobars");
         options.addArguments("--disable-extensions");
-
-        // Initialize ChromeDriver
-        driver = new ChromeDriver(options);
-
-        // Navigate to the test site
-        driver.get("https://katalon-demo-cura.herokuapp.com/");
-        driver.manage().window().maximize();
-
-        homePage = new HomePage(driver);
-
+        return options;
     }
-
 
     @AfterAll
     public void quitDriver() {

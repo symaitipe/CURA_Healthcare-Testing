@@ -1,64 +1,28 @@
 package edu.sahan;
 
 import org.junit.jupiter.api.Test;
-
-import java.util.Objects;
-
 import static org.junit.jupiter.api.Assertions.*;
+import java.util.Objects;
 
 class AppointmentFormTest extends BaseTest {
 
-    /**
-         * 🩺 Medicare
-             A federal health insurance program for people aged 65 or older, or people with certain disabilities.
-
-         * 🩺 Medicaid
-             A state and federal program that provides health coverage for low-income individuals or families.
-
-         * 🩺 None
-             This means the patient is not using any insurance for the appointment.
-     */
-
-
-    /**
-        * revisit within 30 days of a previous hospital stay.
-
-        * It's tracked because frequent readmissions can be a quality or risk indicator.
-     */
-
-
-//=================================================================================================================================================
-
-    //Failed Booking if not logged in
     @Test
     void testBookingFailsIfNotLoggedIn() {
-        // Force logout first
         if (homePage.isUserLoggedIn()) {
-            BurgerMenu menu = homePage.goToBurgerMenu();
-            menu.logOut();
+            homePage.goToBurgerMenu().logOut();
         }
-
-        // Attempt to access appointment form
         homePage.goToMakeAppointmentPage();
-
-        // Assert user is redirected to login
         String url = driver.getCurrentUrl();
-        assert url != null;
+        assertNotNull(url);
         assertTrue(url.contains("profile.php#login") || Objects.requireNonNull(driver.getPageSource()).contains("Login"),
                 "User should be redirected to login page if not logged in");
     }
 
-
-
-
-    //Health Program - Select Medicare
     @Test
     void testBookAppointmentWithMedicare() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Hongkong CURA Healthcare Center");
         form.setHospitalReadmission(true);
@@ -67,18 +31,16 @@ class AppointmentFormTest extends BaseTest {
         form.setComment("Medicare test");
         form.bookAppointment();
 
-        assertTrue(Objects.requireNonNull(driver.getPageSource()).contains("Make Appointment"));
-
+        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
+        assertTrue(confirmation.isAppointmentConfirmed());
     }
 
-    //Health Program - Select Medicaid
+    // Select Medicaid for Health program
     @Test
     void testBookAppointmentWithMedicaid() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Hongkong CURA Healthcare Center");
         form.setHospitalReadmission(true);
@@ -87,37 +49,34 @@ class AppointmentFormTest extends BaseTest {
         form.setComment("Medicaid test");
         form.bookAppointment();
 
-        assertTrue(Objects.requireNonNull(driver.getPageSource()).contains("Make Appointment"));
+        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
+        assertTrue(confirmation.isAppointmentConfirmed());
     }
 
-    //Health Program - Select None
+    //select None for Health program
     @Test
     void testBookAppointmentWithNoneSelected() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Seoul CURA Healthcare Center");
-        form.setHospitalReadmission(false);
+        form.setHospitalReadmission(true);
         form.selectNone();
         form.setVisitDate("01/01/2025");
         form.setComment("No program selected");
         form.bookAppointment();
 
-        assertTrue(Objects.requireNonNull(driver.getPageSource()).contains("Make Appointment"));
+        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
+        assertTrue(confirmation.isAppointmentConfirmed());
     }
 
-
-
+    // Test for Medicaid without readmission
     @Test
     void testBookAppointmentWithMedicaidNoReadmission() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Tokyo CURA Healthcare Center");
         form.setHospitalReadmission(false);
@@ -126,85 +85,78 @@ class AppointmentFormTest extends BaseTest {
         form.setComment("Medicaid without readmission");
         form.bookAppointment();
 
-        assertTrue(Objects.requireNonNull(driver.getPageSource()).contains("Make Appointment"));
+        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
+        assertTrue(confirmation.isAppointmentConfirmed());
     }
 
+
+    //Empty comment test
     @Test
     void testBookAppointmentWithEmptyComment() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Seoul CURA Healthcare Center");
         form.setHospitalReadmission(true);
         form.selectMedicare();
         form.setVisitDate("03/03/2025");
-        form.setComment("");
+        //=====================Empty comment
         form.bookAppointment();
 
-        assertTrue(Objects.requireNonNull(driver.getPageSource()).contains("Make Appointment"));
+        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
+        assertTrue(confirmation.isAppointmentConfirmed());
     }
 
+    // Test for booking with invalid date format -- Assuming the system requires a specific date format (MM/DD/YYYY)
     @Test
     void testBookAppointmentWithInvalidDateFormat() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Hongkong CURA Healthcare Center");
         form.setHospitalReadmission(true);
         form.selectMedicare();
-        form.setVisitDate("03-03-2025"); // Wrong format
+        form.setVisitDate("2025-03-03"); //===================== Wrong format
         form.setComment("Invalid date format");
-
         String beforeUrl = driver.getCurrentUrl();
         form.bookAppointment();
-
-        // Should still be on same page if date format is invalid
         assertEquals(beforeUrl, driver.getCurrentUrl());
     }
 
+    // Test for booking without visit date -- Assuming the system does not allow booking without a date
     @Test
     void testBookAppointmentWithoutDate() {
-        // Check if logged in, if not, log in
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-        // Attempt to book an appointment without entering a date
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Seoul CURA Healthcare Center");
         form.setHospitalReadmission(true);
         form.selectMedicaid();
-        form.setVisitDate(""); // No date entered
+        //===================== Not setting visit date
         form.setComment("No date");
-
         String beforeUrl = driver.getCurrentUrl();
         form.bookAppointment();
-
         assertEquals(beforeUrl, driver.getCurrentUrl());
     }
 
+    // Test for booking with old date ---- Assuming the system does not allow booking for past dates
     @Test
-    void testBookAppointmentWithoutSelectingFacility() {
-        // Check if logged in, if not, log in
+    void testBookAppointmentWithOldDate() {
         if (!homePage.isUserLoggedIn()) {
             homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
-        // Attempt to book an appointment without selecting a facility
         AppointmentForm form = homePage.goToMakeAppointmentPage();
-        // Assuming the form has a default value or fails
+        form.selectFacility("Hongkong CURA Healthcare Center");
         form.setHospitalReadmission(true);
         form.selectMedicare();
-        form.setVisitDate("04/04/2025");
-        form.setComment("No facility selected");
-
+        form.setVisitDate("2025-03-03"); //===================== old date
+        form.setComment("Old date");
+        String beforeUrl = driver.getCurrentUrl();
         form.bookAppointment();
-
-        // Confirmation might still work depending on the system defaults
-        assertTrue(Objects.requireNonNull(driver.getPageSource()).contains("Make Appointment"));
+        assertEquals(beforeUrl, driver.getCurrentUrl());
     }
+
 }
