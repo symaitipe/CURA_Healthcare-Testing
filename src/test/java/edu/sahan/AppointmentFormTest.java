@@ -13,33 +13,49 @@ public class AppointmentFormTest extends BaseTest {
 
     @ParameterizedTest
     @CsvSource({
-            "Tokyo CURA Healthcare Center, Medicare",
-            "Tokyo CURA Healthcare Center, Medicaid",
-            "Tokyo CURA Healthcare Center, None",
-            "Hongkong CURA Healthcare Center, Medicare",
-            "Hongkong CURA Healthcare Center, Medicaid",
-            "Hongkong CURA Healthcare Center, None",
-            "Seoul CURA Healthcare Center, Medicare",
-            "Seoul CURA Healthcare Center, Medicaid",
-            "Seoul CURA Healthcare Center, None"
+            "Tokyo CURA Healthcare Center, Medicare, Yes, 20/12/2025, Comment 1",
+            "Tokyo CURA Healthcare Center, Medicaid, No, 21/12/2025, Comment 2",
+            "Tokyo CURA Healthcare Center, None, Yes, 22/12/2025, Comment 3",
+            "Hongkong CURA Healthcare Center, Medicare, No, 23/12/2025, Comment 4",
+            "Hongkong CURA Healthcare Center, Medicaid, Yes, 24/12/2025, Comment 5",
+            "Hongkong CURA Healthcare Center, None, No, 25/12/2025, Comment 6",
+            "Seoul CURA Healthcare Center, Medicare, Yes, 26/12/2025, Comment 7",
+            "Seoul CURA Healthcare Center, Medicaid, No, 27/12/2025, Comment 8",
+            "Seoul CURA Healthcare Center, None, Yes, 28/12/2025, Comment 9"
     })
-    void testBookingWithVariousCombinations(String facility, String program) {
+    void testBookingWithVariousCombinations_AndVerifyHistory(String facility, String program, String readmission, String date, String comment) {
         homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
+
         form.selectFacility(facility);
-        form.setHospitalReadmission(true);
+        form.setHospitalReadmission(readmission.equals("Yes"));
+
         switch (program) {
             case "Medicare" -> form.selectMedicare();
             case "Medicaid" -> form.selectMedicaid();
             case "None" -> form.selectNone();
         }
-        form.setVisitDate("20/12/2025");
-        form.setComment("Test for " + facility + " and " + program);
+
+        form.setVisitDate(date);
+        form.setComment(comment);
         form.bookAppointment();
 
         AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed(), "Appointment should be confirmed for: " + facility + " and " + program);
+        assertTrue(confirmation.isAppointmentConfirmed(),
+                "Appointment should be confirmed for: " + facility + " with " + program);
+
+        HistoryPage history = confirmation.goToHistoryPage();
+        List<WebElement> appointments = history.findAllAppointmentsByDate(date);
+        assertFalse(appointments.isEmpty(), "Appointment should exist in history for date: " + date);
+
+        WebElement appointment = appointments.get(0);
+
+        assertEquals(facility, history.getFacility(appointment), "Facility mismatch in history");
+        assertEquals(readmission, history.getReadmission(appointment), "Readmission mismatch in history");
+        assertEquals(program, history.getProgram(appointment), "Program mismatch in history");
+        assertEquals(comment, history.getComment(appointment), "Comment mismatch in history");
     }
+
 
     @Test
     void testBookAppointmentWithMaxLengthComment() {
@@ -54,7 +70,8 @@ public class AppointmentFormTest extends BaseTest {
         form.bookAppointment();
 
         AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed(), "Appointment should be confirmed with max-length comment");
+        assertTrue(confirmation.isAppointmentConfirmed(),
+                "Appointment should be confirmed with max-length comment");
     }
 
     @Test
@@ -67,13 +84,15 @@ public class AppointmentFormTest extends BaseTest {
                 "Hongkong CURA Healthcare Center",
                 "Seoul CURA Healthcare Center"
         );
-        assertEquals(expectedOptions, actualOptions, "Facility dropdown options should match expected list");
+        assertEquals(expectedOptions, actualOptions,
+                "Facility dropdown options should match expected list");
     }
 
     @Test
     void testBookingWithoutLoginShouldFail() {
         AppointmentForm form = homePage.goToMakeAppointmentPage();
-        assertTrue(form.isRedirectedToLogin(), "User should be redirected to login if not authenticated");
+        assertTrue(form.isRedirectedToLogin(),
+                "User should be redirected to login if not authenticated");
     }
 
     @Test

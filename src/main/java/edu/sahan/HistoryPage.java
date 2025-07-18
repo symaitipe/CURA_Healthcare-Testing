@@ -25,7 +25,6 @@ public class HistoryPage {
     }
 
 
-
     public List<WebElement> findAllAppointmentsByDate(String date) {
         return driver.findElements(appointmentPanelByDate(date));
     }
