@@ -34,31 +34,30 @@ public class HomePage {
         } catch (Exception e) {
             return false;
         }
+
     }
 
-    public boolean isLoginMenuItemVisible() {
-        try {
-            driver.findElement(burgerMenuButton).click();
-            boolean visible = wait.until(ExpectedConditions.visibilityOfElementLocated(loginMenuItem)).isDisplayed();
-            driver.findElement(burgerMenuButton).click();
-            return visible;
-        } catch (Exception e) {
-            return false;
+    public AppointmentForm goToMakeAppointmentPage() {
+        wait.until(ExpectedConditions.elementToBeClickable(makeAppointmentButton)).click();
+        return new AppointmentForm(driver);
+    }
+
+
+    public void loginIfNotLoggedIn() {
+        if (!isUserLoggedIn()) {
+            goToBurgerMenu()
+                    .goToLoginPage()
+                    .loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
         }
     }
 
     public boolean isBurgerMenuCollapsed() {
         // Check if the burger menu is collapsed (not expanded)
         try {
-            // If login/logout menu item is not visible, menu is collapsed
+            // If login is visible and logout menu item is not visible, user is logged out
             return driver.findElement(loginMenuItem).isDisplayed() && !driver.findElement(logoutMenuItem).isDisplayed();
         } catch (Exception e) {
             return true;
         }
-    }
-
-    public AppointmentForm goToMakeAppointmentPage() {
-        wait.until(ExpectedConditions.elementToBeClickable(makeAppointmentButton)).click();
-        return new AppointmentForm(driver);
     }
 }

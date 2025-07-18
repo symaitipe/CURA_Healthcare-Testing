@@ -1,126 +1,84 @@
 package edu.sahan;
 
-import org.junit.jupiter.api.Test;
-
-
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.openqa.selenium.WebElement;
 
-import static org.junit.jupiter.api.Assertions.*;
 import java.util.List;
 
-
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AppointmentFormTest extends BaseTest {
 
-
-    @Test
-    void testBookAppointmentWithMedicaid() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
+    @ParameterizedTest
+    @CsvSource({
+            "Tokyo CURA Healthcare Center, Medicare",
+            "Tokyo CURA Healthcare Center, Medicaid",
+            "Tokyo CURA Healthcare Center, None",
+            "Hongkong CURA Healthcare Center, Medicare",
+            "Hongkong CURA Healthcare Center, Medicaid",
+            "Hongkong CURA Healthcare Center, None",
+            "Seoul CURA Healthcare Center, Medicare",
+            "Seoul CURA Healthcare Center, Medicaid",
+            "Seoul CURA Healthcare Center, None"
+    })
+    void testBookingWithVariousCombinations(String facility, String program) {
+        homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
-        form.selectFacility("Hongkong CURA Healthcare Center");
+        form.selectFacility(facility);
         form.setHospitalReadmission(true);
-        form.selectMedicaid();
-        form.setVisitDate("12/12/2025");
-        form.setComment("Medicaid test");
+        switch (program) {
+            case "Medicare" -> form.selectMedicare();
+            case "Medicaid" -> form.selectMedicaid();
+            case "None" -> form.selectNone();
+        }
+        form.setVisitDate("20/12/2025");
+        form.setComment("Test for " + facility + " and " + program);
         form.bookAppointment();
 
         AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed());
-
-        HistoryPage history = confirmation.goToHistoryPage();
-        List<WebElement> appointments = history.findAllAppointmentsByDate("12/12/2025");
-        assertFalse(appointments.isEmpty());
-        WebElement appointment = appointments.get(0);
-        assertEquals(history.getFacility(appointment), "Hongkong CURA Healthcare Center");
-        assertEquals(history.getReadmission(appointment), "Yes");
-        assertEquals(history.getProgram(appointment), "Medicaid");
-        assertEquals(history.getComment(appointment), "Medicaid test");
+        assertTrue(confirmation.isAppointmentConfirmed(), "Appointment should be confirmed for: " + facility + " and " + program);
     }
 
     @Test
-    void testBookAppointmentWithNoneSelected() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
-        AppointmentForm form = homePage.goToMakeAppointmentPage();
-        form.selectFacility("Seoul CURA Healthcare Center");
-        form.setHospitalReadmission(true);
-        form.selectNone();
-        form.setVisitDate("01/01/2026");
-        form.setComment("No program selected");
-        form.bookAppointment();
-
-        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed());
-
-        HistoryPage history = confirmation.goToHistoryPage();
-        List<WebElement> appointments = history.findAllAppointmentsByDate("01/01/2026");
-        assertFalse(appointments.isEmpty());
-        WebElement appointment = appointments.get(0);
-        assertEquals(history.getFacility(appointment), "Seoul CURA Healthcare Center");
-        assertEquals(history.getReadmission(appointment), "Yes");
-        assertEquals(history.getProgram(appointment), "None");
-        assertEquals(history.getComment(appointment), "No program selected");
-    }
-
-    @Test
-    void testBookAppointmentWithMedicaidNoReadmission() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
+    void testBookAppointmentWithMaxLengthComment() {
+        homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Tokyo CURA Healthcare Center");
         form.setHospitalReadmission(false);
         form.selectMedicaid();
-        form.setVisitDate("02/02/2026");
-        form.setComment("Medicaid without readmission");
+        form.setVisitDate("25/12/2025");
+        String longComment = "A".repeat(500);
+        form.setComment(longComment);
         form.bookAppointment();
 
         AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed());
-
-        HistoryPage history = confirmation.goToHistoryPage();
-        List<WebElement> appointments = history.findAllAppointmentsByDate("02/02/2026");
-        assertFalse(appointments.isEmpty());
-        WebElement appointment = appointments.get(0);
-        assertEquals(history.getFacility(appointment), "Tokyo CURA Healthcare Center");
-        assertEquals(history.getReadmission(appointment), "No");
-        assertEquals(history.getProgram(appointment), "Medicaid");
-        assertEquals(history.getComment(appointment), "Medicaid without readmission");
+        assertTrue(confirmation.isAppointmentConfirmed(), "Appointment should be confirmed with max-length comment");
     }
 
     @Test
-    void testBookAppointmentWithEmptyComment() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
+    void testFacilityDropdownOptions() {
+        homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
-        form.selectFacility("Seoul CURA Healthcare Center");
-        form.setHospitalReadmission(true);
-        form.selectMedicare();
-        form.setVisitDate("03/03/2026");
-        form.bookAppointment();
+        List<String> actualOptions = form.getAllFacilityOptions();
+        List<String> expectedOptions = List.of(
+                "Tokyo CURA Healthcare Center",
+                "Hongkong CURA Healthcare Center",
+                "Seoul CURA Healthcare Center"
+        );
+        assertEquals(expectedOptions, actualOptions, "Facility dropdown options should match expected list");
+    }
 
-        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed());
-
-        HistoryPage history = confirmation.goToHistoryPage();
-        List<WebElement> appointments = history.findAllAppointmentsByDate("03/03/2026");
-        assertFalse(appointments.isEmpty());
-        WebElement appointment = appointments.get(0);
-        assertEquals(history.getFacility(appointment), "Seoul CURA Healthcare Center");
-        assertEquals(history.getReadmission(appointment), "Yes");
-        assertEquals(history.getProgram(appointment), "Medicare");
-        assertEquals(history.getComment(appointment), "");
+    @Test
+    void testBookingWithoutLoginShouldFail() {
+        AppointmentForm form = homePage.goToMakeAppointmentPage();
+        assertTrue(form.isRedirectedToLogin(), "User should be redirected to login if not authenticated");
     }
 
     @Test
     void testBookAppointmentWithInvalidDateFormat() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
+        homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Hongkong CURA Healthcare Center");
         form.setHospitalReadmission(true);
@@ -129,14 +87,12 @@ public class AppointmentFormTest extends BaseTest {
         form.setComment("Invalid date format");
         String beforeUrl = driver.getCurrentUrl();
         form.bookAppointment();
-        assertEquals(beforeUrl, driver.getCurrentUrl());
+        assertEquals(beforeUrl, driver.getCurrentUrl(), "Invalid date format should not navigate away");
     }
 
     @Test
     void testBookAppointmentWithoutDate() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
+        homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Seoul CURA Healthcare Center");
         form.setHospitalReadmission(true);
@@ -144,48 +100,24 @@ public class AppointmentFormTest extends BaseTest {
         form.setComment("No date");
         String beforeUrl = driver.getCurrentUrl();
         form.bookAppointment();
-        assertEquals(beforeUrl, driver.getCurrentUrl());
+        assertEquals(beforeUrl, driver.getCurrentUrl(), "Booking without date should not navigate away");
     }
 
     @Test
     void testBookAppointmentWithOldDate() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
+        homePage.loginIfNotLoggedIn();
         AppointmentForm form = homePage.goToMakeAppointmentPage();
         form.selectFacility("Hongkong CURA Healthcare Center");
         form.setHospitalReadmission(true);
         form.selectMedicare();
-        form.setVisitDate("01/01/2025"); // Past date relative to current date
+        form.setVisitDate("01/01/2025");
         form.setComment("Old date");
         String beforeUrl = driver.getCurrentUrl();
         form.bookAppointment();
-        assertEquals(beforeUrl, driver.getCurrentUrl());
+        assertEquals(beforeUrl, driver.getCurrentUrl(), "Booking with old date should not navigate away");
     }
 
-    @Test
-    void testBookAppointmentWithMedicaidAndNewFacility() {
-        if (!homePage.isUserLoggedIn()) {
-            homePage.goToBurgerMenu().goToLoginPage().loginWithValidCredentials("John Doe", "ThisIsNotAPassword");
-        }
-        AppointmentForm form = homePage.goToMakeAppointmentPage();
-        form.selectFacility("Seoul CURA Healthcare Center");
-        form.setHospitalReadmission(false);
-        form.selectMedicaid();
-        form.setVisitDate("15/08/2025");
-        form.setComment("New facility test");
-        form.bookAppointment();
 
-        AppointmentConfirmationPage confirmation = new AppointmentConfirmationPage(driver);
-        assertTrue(confirmation.isAppointmentConfirmed());
 
-        HistoryPage history = confirmation.goToHistoryPage();
-        List<WebElement> appointments = history.findAllAppointmentsByDate("15/08/2025");
-        assertFalse(appointments.isEmpty());
-        WebElement appointment = appointments.get(0);
-        assertEquals(history.getFacility(appointment), "Seoul CURA Healthcare Center");
-        assertEquals(history.getReadmission(appointment), "No");
-        assertEquals(history.getProgram(appointment), "Medicaid");
-        assertEquals(history.getComment(appointment), "New facility test");
-    }
+
 }

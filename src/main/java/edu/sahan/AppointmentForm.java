@@ -6,6 +6,9 @@ import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class AppointmentForm {
     private final WebDriver driver;
@@ -22,7 +25,7 @@ public class AppointmentForm {
     private static final By radioMedicaid = By.id("radio_program_medicaid");
     private static final By radioNone = By.id("radio_program_none");
 
-    private static final By datepicker = By.className("datepicker");
+
 
     public AppointmentForm(WebDriver driver) {
         this.driver = driver;
@@ -67,5 +70,18 @@ public class AppointmentForm {
 
     public void bookAppointment() {
         wait.until(ExpectedConditions.elementToBeClickable(btnBookAppointment)).click();
+    }
+
+    public List<String> getAllFacilityOptions() {
+             Select allFacilitiesElements = new Select(wait.until(ExpectedConditions.elementToBeClickable(facilityDropdown)));
+             return allFacilitiesElements.getOptions().stream().map(WebElement::getText).collect(Collectors.toList());
+    }
+
+    public boolean isRedirectedToLogin() {
+        try {
+            return wait.until(ExpectedConditions.urlContains("login"));
+        } catch (TimeoutException e) {
+            return false;
+        }
     }
 }

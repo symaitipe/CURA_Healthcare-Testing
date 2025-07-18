@@ -9,7 +9,8 @@ import java.time.Duration;
 
 public class AppointmentConfirmationPage {
 
-    private final static By appointmentConfirmation = By.xpath("//h2[text()='Appointment Confirmation']");
+    private final static By appointmentConfirmation =
+            By.xpath("//h2[text()='Appointment Confirmation']");
 
     WebDriver driver;
     WebDriverWait wait;
